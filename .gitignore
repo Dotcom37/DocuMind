@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Chroma / vector database
+chroma_db/
+*.sqlite
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
