@@ -38,6 +38,9 @@ def build_graph(session_id: str, user_id: int):
 
     def agent(state: State):
         response = llm_with_tools.invoke(state["messages"])
+
+        print("LLM RESPONSE:", response)
+        print("TOOL CALLS:", response.tool_calls)
         return {"messages": [response]}
 
     builder = StateGraph(State)
@@ -52,8 +55,12 @@ def build_graph(session_id: str, user_id: int):
 
 
 def generate_response(question: str, session_id: str, user_id: int):
+    if not question or not question.strip():
+        raise ValueError("Question cannot be empty.")
     graph = build_graph(session_id, user_id)
     result = graph.invoke(
         {"messages": [SYSTEM_MESSAGE, ("user", question)]}
     )
     return result["messages"][-1]
+
+    

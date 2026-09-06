@@ -98,6 +98,27 @@ function ChatApp({ user, onLogout }) {
   async function loadSessions() { try { setSessions(await api('/sessions')) } catch (e) { setError(e.message) } }
   async function createChat() { setError(''); try { const data = await api('/chat', { method: 'POST' }); setSession(data); setMessages([]); await loadSessions() } catch (e) { setError(e.message) } }
   async function openChat(s) { setError(''); try { const data = await api(`/chat/session?session_id=${encodeURIComponent(s.session_id)}`); setSession(data); setMessages(data.messages || []) } catch (e) { setError(e.message) } }
+  async function deleteChat(sessionId) {setError('')
+
+  try {
+    await api(`/chat/${sessionId}`, {
+      method: 'DELETE'
+    })
+
+    // Remove it from the sidebar
+    setSessions(prev =>
+      prev.filter(s => s.session_id !== sessionId)
+    )
+
+    // If the deleted chat was currently open, clear it
+    if (session?.session_id === sessionId) {
+      setSession(null)
+      setMessages([])
+    }
+  } catch (e) {
+    setError(e.message)
+  }
+}
   async function uploadPdf() {
     if (!file || !session) return; setUploading(true); setError('')
     try { const form = new FormData(); form.append('file', file); form.append('session_id', session.session_id); await api('/upload', { method: 'POST', body: form }); setFile(null); if (inputRef.current) inputRef.current.value = '' }
@@ -117,7 +138,32 @@ function ChatApp({ user, onLogout }) {
       <div className="user-box"><div><strong>{user.name}</strong><small>{user.email}</small></div><button onClick={logout}>Log out</button></div>
       <button className="new-chat" onClick={createChat}>＋ New chat</button>
       <div className="history-title">Recent chats</div>
-      <div className="history">{sessions.length === 0 && <div className="empty-history">No chats yet</div>}{sessions.map(s => <button key={s.session_id} className={`history-item ${session?.session_id === s.session_id ? 'active' : ''}`} onClick={() => openChat(s)}><span>{s.title || `chat_${s.chat_id}`}</span><small>{new Date(s.updated_at).toLocaleDateString()}</small></button>)}</div>
+      <div className="history">{sessions.length === 0 && <div className="empty-history">No chats yet</div>}
+      {sessions.map(s => (
+  <div className="history-item-wrapper" key={s.session_id}>
+    <button
+      className={`history-item ${
+        session?.session_id === s.session_id ? 'active' : ''
+      }`}
+      onClick={() => openChat(s)}
+    >
+      <span>{s.title || `chat_${s.chat_id}`}</span>
+      <small>{new Date(s.updated_at).toLocaleDateString()}</small>
+    </button>
+
+    <button
+      className="delete-chat"
+      onClick={(e) => {
+        e.stopPropagation()
+        deleteChat(s.session_id)
+      }}
+      title="Delete chat"
+    >
+      🗑️
+    </button>
+  </div>
+))}
+    </div>
     </aside>
     <main className="main">
       <header><div><h1>{session ? (session.title || `Chat ${session.chat_id}`) : 'PDF Research Assistant'}</h1><p>{session ? 'Ask questions about your uploaded document.' : 'Create a chat and upload a PDF to begin.'}</p></div></header>

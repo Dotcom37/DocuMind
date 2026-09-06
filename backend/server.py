@@ -11,7 +11,7 @@ from sqlalchemy import inspect, text
 from .config.extensions import db
 from . import models  # noqa: F401
 from .auth import auth_bp
-from .views import get_response, list_sessions, new_chat, retrieve_previous_session, upload_doc
+from .views import get_response, list_sessions, new_chat, retrieve_previous_session, upload_doc, delete_chat_view
 
 
 def create_app():
@@ -35,12 +35,14 @@ def create_app():
         def post(self): return get_response(request)
     class UploadDocument(Resource):
         def post(self): return upload_doc(request)
-
+    class DeleteChat(Resource):
+        def delete(self, session_id): return delete_chat_view(request,session_id)  
     api.add_resource(NewChat, "/chat")
     api.add_resource(Sessions, "/sessions")
     api.add_resource(PreviousSession, "/chat/session")
     api.add_resource(ChatResponse, "/chat/response")
     api.add_resource(UploadDocument, "/upload")
+    api.add_resource(DeleteChat, "/chat/<string:session_id>")
 
     with app.app_context():
         db.create_all()
@@ -56,4 +58,4 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.getenv("PORT", "5000")))
+    app.run(debug=True, port=int(os.getenv("PORT", "8000")))

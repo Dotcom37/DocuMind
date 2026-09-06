@@ -4,7 +4,7 @@ import uuid
 from .agent import generate_response
 from .config.extensions import db
 from .models import ChatSession, Chats
-from .rag import ingest_pdf
+from .rag import ingest_pdf, delete_pdf_data
 
 
 def create_session(user_id):
@@ -73,6 +73,30 @@ def ask_question(question, session_id, user_id):
         save_message(session_id, "ai", answer)
         touch_session(session_id, question)
         return answer
+    except Exception:
+        db.session.rollback()
+        raise
+
+def delete_chat(session_id, user_id):
+    session = _session_for_user(session_id, user_id)
+
+    if not session:
+        raise PermissionError("You do not have access to this chat")
+
+    try:
+        # Delete PDF chunks from Chroma
+        delete_pdf_data(session_id, user_id)
+
+        # Delete messages from PostgreSQL
+        Chats.query.filter_by(session_id=session_id).delete(
+            synchronize_session=False
+        )
+
+        # Delete session from PostgreSQL
+        db.session.delete(session)
+
+        db.session.commit()
+
     except Exception:
         db.session.rollback()
         raise

@@ -3,7 +3,7 @@ from uuid import UUID
 from flask_restful import reqparse
 
 from .auth import require_verified_user
-from .services import ask_question, create_session, get_all_sessions, get_chat_messages, get_session_by_id, upload_pdf
+from .services import ask_question, create_session, get_all_sessions, get_chat_messages, get_session_by_id, upload_pdf, delete_chat
 
 
 @require_verified_user
@@ -80,3 +80,22 @@ def get_response(user, req):
     except Exception as exc:
         return {"error": f"Failed to generate response: {exc}"}, 500
     return {"answer": answer}, 200
+
+@require_verified_user
+def delete_chat_view(user, req, session_id):
+    try:
+        UUID(session_id)
+    except ValueError:
+        return {"error": "Invalid session_id"}, 400
+
+    try:
+        delete_chat(session_id, user.id)
+    except PermissionError as exc:
+        return {"error": str(exc)}, 403
+    except Exception as exc:
+        return {"error": f"Failed to delete chat: {exc}"}, 500
+
+    return {
+        "message": "Chat deleted successfully",
+        "session_id": session_id
+    }, 200
