@@ -399,7 +399,7 @@ def me():
 
     return {
         "user": user.to_dict(),
-        "csrf_token": request.cookies.get("csrf_token")
+        "csrf_token":request.cookies.get("csrf_token")
     }, 200
 
 
