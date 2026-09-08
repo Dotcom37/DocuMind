@@ -2,7 +2,8 @@ import os
 from typing import Annotated, TypedDict
 
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from .models import Chats, ChatSession
 from langchain_tavily import TavilySearch
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -53,14 +54,42 @@ def build_graph(session_id: str, user_id: int):
     builder.add_edge("tools", "agent")
     return builder.compile()
 
+def get_chat_history(session_id: str, user_id: int):
+    history = (
+        Chats.query
+        .join(ChatSession)
+        .filter(
+            Chats.session_id == session_id,
+            ChatSession.user_id == user_id
+        )
+        .order_by(Chats.created_at.asc())
+        .all()
+    )
 
+    messages = []
+
+    for chat in history:
+        if chat.role == "human":
+            messages.append(HumanMessage(content=chat.message))
+        elif chat.role == "ai":
+            messages.append(AIMessage(content=chat.message))
+
+    return messages
 def generate_response(question: str, session_id: str, user_id: int):
     if not question or not question.strip():
         raise ValueError("Question cannot be empty.")
+
+    history = get_chat_history(session_id, user_id)
+
     graph = build_graph(session_id, user_id)
-    result = graph.invoke(
-        {"messages": [SYSTEM_MESSAGE, ("user", question)]}
-    )
+
+    result = graph.invoke({
+        "messages": [
+            SYSTEM_MESSAGE,
+            *history
+        ]
+    })
+
     return result["messages"][-1]
 
     
