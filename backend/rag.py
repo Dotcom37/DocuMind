@@ -110,7 +110,11 @@ def ingest_pdf(file_storage, session_id: str, user_id: int) -> int:
             pass
 
         if chunks:
-            vector_store.add_documents(chunks)
+           batch_size = 20
+
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i:i + batch_size]
+            vector_store.add_documents(batch)
 
         return len(chunks)
 
