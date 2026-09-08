@@ -9,7 +9,7 @@ let csrfTokenValue = ''
 async function api(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase()
   const headers = { ...(options.headers || {}) }
-  console.log("CSRF:", csrfToken())
+
   if (method !== 'GET' && method !== 'HEAD') headers['X-CSRF-TOKEN'] = csrfTokenValue
   const res = await fetch(`${API}${path}`, { ...options, headers, credentials: 'include' })
   const data = await res.json().catch(() => ({}))
