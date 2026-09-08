@@ -398,7 +398,8 @@ def me():
         }, 401
 
     return {
-        "user": user.to_dict()
+        "user": user.to_dict(),
+        "csrf_token": request.cookies.get("csrf_token")
     }, 200
 
 

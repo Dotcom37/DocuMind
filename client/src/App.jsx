@@ -4,15 +4,13 @@ import './App.css'
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-function csrfToken() {
-  return document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] || ''
-}
+let csrfTokenValue = ''
 
 async function api(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase()
   const headers = { ...(options.headers || {}) }
   console.log("CSRF:", csrfToken())
-  if (method !== 'GET' && method !== 'HEAD') headers['X-CSRF-TOKEN'] = csrfToken()
+  if (method !== 'GET' && method !== 'HEAD') headers['X-CSRF-TOKEN'] = csrfTokenValue
   const res = await fetch(`${API}${path}`, { ...options, headers, credentials: 'include' })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -180,7 +178,14 @@ function ChatApp({ user, onLogout }) {
 export default function App() {
   const [user, setUser] = useState(null)
   const [checking, setChecking] = useState(true)
-  useEffect(() => { api('/auth/me').then(data => setUser(data.user)).catch(() => {}).finally(() => setChecking(false)) }, [])
+  useEffect(() => 
+    { api('/auth/me').
+      then(data => {
+        csrfTokenValue = data.csrf_token 
+        setUser(data.user)
+      }).catch(() => {}).
+      finally(() => setChecking(false)) }
+      , [])
   if (checking) return <div className="auth-loading">Loading…</div>
   return user ? <ChatApp user={user} onLogout={() => setUser(null)} /> : <Auth onLogin={setUser} />
 }
