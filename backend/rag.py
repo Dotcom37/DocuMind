@@ -75,6 +75,8 @@ def ingest_pdf(file_storage, session_id: str, user_id: int) -> int:
     temp_path = None
 
     try:
+        print("UPLOAD: saving PDF", flush=True)
+
         with tempfile.NamedTemporaryFile(
             delete=False,
             suffix=".pdf"
@@ -82,20 +84,29 @@ def ingest_pdf(file_storage, session_id: str, user_id: int) -> int:
             temp_path = tmp.name
             file_storage.save(temp_path)
 
+        print("UPLOAD: PDF saved", flush=True)
+
+        print("UPLOAD: loading PDF", flush=True)
         docs = PyPDFLoader(temp_path).load()
+        print(f"UPLOAD: PDF loaded, pages={len(docs)}", flush=True)
 
         for doc in docs:
             doc.metadata["session_id"] = session_id
             doc.metadata["user_id"] = str(user_id)
 
+        print("UPLOAD: splitting PDF", flush=True)
         chunks = splitter.split_documents(docs)
+        print(f"UPLOAD: split complete, chunks={len(chunks)}", flush=True)
 
-        # Remove empty chunks before sending them to Gemini
         chunks = [
             chunk
             for chunk in chunks
             if chunk.page_content and chunk.page_content.strip()
         ]
+
+        print(f"UPLOAD: non-empty chunks={len(chunks)}", flush=True)
+
+        print("UPLOAD: deleting old vectors", flush=True)
 
         try:
             vector_store.delete(
@@ -106,15 +117,32 @@ def ingest_pdf(file_storage, session_id: str, user_id: int) -> int:
                     ]
                 }
             )
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"UPLOAD: delete failed: {e}", flush=True)
+
+        print("UPLOAD: old vectors deleted", flush=True)
 
         if chunks:
-           batch_size = 20
+            batch_size = 20
 
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i + batch_size]
-            vector_store.add_documents(batch)
+            for i in range(0, len(chunks), batch_size):
+                batch = chunks[i:i + batch_size]
+
+                print(
+                    f"UPLOAD: embedding batch "
+                    f"{i // batch_size + 1}/"
+                    f"{(len(chunks) + batch_size - 1) // batch_size}",
+                    flush=True
+                )
+
+                vector_store.add_documents(batch)
+
+                print(
+                    f"UPLOAD: batch {i // batch_size + 1} complete",
+                    flush=True
+                )
+
+        print("UPLOAD: ingestion complete", flush=True)
 
         return len(chunks)
 
