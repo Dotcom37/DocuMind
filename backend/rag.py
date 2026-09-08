@@ -108,17 +108,17 @@ def ingest_pdf(file_storage, session_id: str, user_id: int) -> int:
 
         print("UPLOAD: deleting old vectors", flush=True)
 
-        try:
-            vector_store.delete(
-                where={
-                    "$and": [
-                        {"session_id": {"$eq": session_id}},
-                        {"user_id": {"$eq": str(user_id)}}
-                    ]
-                }
-            )
-        except Exception as e:
-            print(f"UPLOAD: delete failed: {e}", flush=True)
+        # try:
+        #     vector_store.delete(
+        #         where={
+        #             "$and": [
+        #                 {"session_id": {"$eq": session_id}},
+        #                 {"user_id": {"$eq": str(user_id)}}
+        #             ]
+        #         }
+        #     )
+        # except Exception as e:
+        #     print(f"UPLOAD: delete failed: {e}", flush=True)
 
         print("UPLOAD: old vectors deleted", flush=True)
 
