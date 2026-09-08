@@ -16,9 +16,18 @@ from .views import get_response, list_sessions, new_chat, retrieve_previous_sess
 
 def create_app():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url and database_url.startswith("postgresql://"):
+       database_url = database_url.replace(
+        "postgresql://",
+        "postgresql+psycopg://",
+        1
+       )
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "change-this-in-production")
+    app.config["SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 
     db.init_app(app)
     CORS(app, resources={r"/*": {"origins": [os.getenv("FRONTEND_URL", "http://localhost:5173")], "supports_credentials": True}}, expose_headers=["X-CSRF-TOKEN"])

@@ -20,6 +20,7 @@ dependencies = [
   "flask-jwt-extended>=4.7.4",
   "authlib>=1.8.0",
   "google-genai>=2.22.0",
+  "gunicorn>=26.2.0",
 ]
 
 [tool.uv]
