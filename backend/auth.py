@@ -190,6 +190,10 @@ def logout():
 def google_login():
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     if not client_id or not os.getenv("GOOGLE_CLIENT_SECRET"): return {"error": "Google login is not configured"}, 503
+    print("GOOGLE REDIRECT URI:", url_for(
+    "auth.google_callback",
+    _external=True
+    ))
     state = secrets.token_urlsafe(32); session["google_oauth_state"] = state
     params = {"client_id": client_id, "redirect_uri": url_for("auth.google_callback", _external=True), "response_type": "code", "scope": "openid email profile", "state": state, "access_type": "offline", "prompt": "select_account"}
     return redirect("https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params))
